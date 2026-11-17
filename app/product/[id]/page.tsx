@@ -1,64 +1,72 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../../../context/AuthContext";
+import { useParams } from "next/navigation";
+import { useCart } from "../../../context/CartContext";
 
-export default function RegisterPage() {
-  const { register } = useAuth();
-  const router = useRouter();
+type Product = {
+  id: number;
+  title: string;
+  price: number;
+  image: string;
+  description: string;
+};
 
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function ProductDetails() {
+  const params = useParams();
+  const { addToCart } = useCart();
 
-  function handleRegister(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    register(username, email, password);
+  useEffect(() => {
+    async function getProduct() {
+      try {
+        const response = await fetch(
+          `https://fakestoreapi.com/products/${params.id}`,
+        );
 
-    alert("Registration successful!");
+        if (!response.ok) {
+          throw new Error("Product not found");
+        }
 
-    router.push("/");
+        const data = await response.json();
+        setProduct(data);
+      } catch {
+        setError("Could not load product details.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    getProduct();
+  }, [params.id]);
+
+  if (loading) {
+    return <p>Loading product details...</p>;
+  }
+
+  if (error || !product) {
+    return <p>{error || "Product not found."}</p>;
   }
 
   return (
-    <main className="authPage">
-      <form className="authForm" onSubmit={handleRegister}>
-        <h1>Register</h1>
+    <main className="productsPage">
+      <Link href="/">← Back to Home</Link>
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          required
-        />
+      <div className="productCard">
+        <img src={product.image} alt={product.title} width="250" />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
+        <h1>{product.title}</h1>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
+        <h2>${product.price}</h2>
 
-        <button type="submit">Register</button>
+        <p>{product.description}</p>
 
-        <p>
-          Already have an account? <Link href="/login">Login</Link>
-        </p>
-      </form>
+        <button onClick={() => addToCart(product)}>Add to Cart</button>
+      </div>
     </main>
   );
 }
