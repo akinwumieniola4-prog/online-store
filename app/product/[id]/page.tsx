@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCart } from "../../../context/CartContext";
@@ -13,7 +14,7 @@ type Product = {
   description: string;
 };
 
-export default function ProductDetails() {
+function ProductDetailsContent() {
   const params = useParams();
   const { addToCart } = useCart();
 
@@ -25,7 +26,7 @@ export default function ProductDetails() {
     async function getProduct() {
       try {
         const response = await fetch(
-          `https://fakestoreapi.com/products/${params.id}`,
+          `https://fakestoreapi.com/products/${params.id}`
         );
 
         if (!response.ok) {
@@ -57,16 +58,28 @@ export default function ProductDetails() {
       <Link href="/">← Back to Home</Link>
 
       <div className="productCard">
-        <img src={product.image} alt={product.title} width="250" />
+        <img
+          src={product.image}
+          alt={product.title}
+          width="250"
+        />
 
         <h1>{product.title}</h1>
-
         <h2>${product.price}</h2>
-
         <p>{product.description}</p>
 
-        <button onClick={() => addToCart(product)}>Add to Cart</button>
+        <button onClick={() => addToCart(product)}>
+          Add to Cart
+        </button>
       </div>
     </main>
+  );
+}
+
+export default function ProductDetailsPage() {
+  return (
+    <Suspense fallback={<p>Loading product page...</p>}>
+      <ProductDetailsContent />
+    </Suspense>
   );
 }
